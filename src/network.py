@@ -8,7 +8,7 @@ from clean_data import training_data, test_data
 
 class Network:
     def __init__(self, sizes):
-        self.num_layers = sizes
+        self.num_layers = len(sizes)
         self.sizes = sizes
         self.weights = [np.random.randn(x, y)
                         for y, x in zip(sizes[:-1], sizes[1:])]
@@ -16,8 +16,10 @@ class Network:
 
     def SGD(self, training_data, lr, epochs, mini_batch_size):
         for epoch in range(epochs):
+            print(f'Epoch {epoch}')
             np.random.shuffle(training_data)
             for mb_idx in range(0, len(training_data), mini_batch_size):
+                print(f'mini batch')
                 mini_batch = training_data[mb_idx:mb_idx+mini_batch_size]
                 self.update_mini_batch(mini_batch, lr)
 
@@ -59,7 +61,7 @@ class Network:
 
     def update_mini_batch(self, mini_batch, lr):
         nabla_w = [np.zeros(w.shape) for w in self.weights]
-        nabla_b = [np.zeros(b.shape for b in self.biases)]
+        nabla_b = [np.zeros(b.shape) for b in self.biases]
         for passenger, survival in mini_batch:
             delta_nabla_b, delta_nabla_w = self.backprop(passenger, survival)
             nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
@@ -69,8 +71,11 @@ class Network:
         self.biases = [b-(lr/len(mini_batch))*nb for b,
                        nb in zip(self.biases, nabla_b)]
 
-    # def feedforward(self, data):
-    #     pass
+    def feedforward_one(self, a):
+        for b, w in zip(self.biases, self.weights):
+            a = self.sigmoid(np.dot(w, a)+b)
+        print(a)
+        return a
 
     # def evaluate(self, eval_data):
     #     eval_input, eval_solution = eval_data
@@ -78,8 +83,15 @@ class Network:
     #     t = sum(x == y for x, y in zip(eval_results, eval_solution))
     #     return t
 
+    def evaluate(self, eval_data):
+        correct, total = 0, len(eval_data)
+        for passenger, survival in eval_data:
+            predicted_survival = self.feedforward_one(passenger)
+            if predicted_survival == survival:
+                correct += 1
+        print(f"{(correct/total)*100}% out of {len(eval_data)}")
+
 
 a = Network([6, 20, 20, 1])
-# a.evaluate(training_data)
 a.SGD(training_data=training_data, lr=1,
       epochs=10, mini_batch_size=100)
